@@ -64,8 +64,6 @@ f_welcome(True
 #
 # Todo:
 # 
-# Fix partial plot
-# Add M.L. algos as functions
 #----------------------------------    
 
 # Visualize
@@ -393,7 +391,7 @@ def f_roc_curve(target, prediction):
 
 def f_lift_table(target
                 ,prediction
-                ,n_bins = 10
+                ,n_bins
                 ,print_desc = False):
 
     """
@@ -404,12 +402,16 @@ def f_lift_table(target
 
     target         Array/Series, integer (binary): Actual target labels
     prediction     Array/Series, float (continious): Predicted class label probability from classifier built on target
-    n_bins         Scalar, Integer: How many groups, standard deciles (demi-deciles)
+    n_bins         Scalar(Integer) or List: How many groups, standard deciles (demi-deciles) given scalar OR binned given list input on range (0,1)
     print_desc     Boolean (True/False)): Print info, or not... 
 
     """
 
     # Pre-processsing of input types to be able to handle separate objects coming in, i.e. Pandas Series or numpy ndarray;
+    
+    #-----------------------------
+    # Check prediction object type
+    #-----------------------------
     if isinstance(prediction, pd.Series):
         print ("Model prediction %s is of correct form, proceeding..." % type(prediction))
         
@@ -420,6 +422,9 @@ def f_lift_table(target
     else: 
         print("Ending exeuction due to not having a correct variable type")
 
+    #-----------------------------
+    # Check prediction object type
+    #-----------------------------
     if isinstance(target, pd.Series):
         print ("Model target variable %s is of correct form, proceeding..." % type(target))
 
@@ -449,16 +454,33 @@ def f_lift_table(target
     # List for holding labels
     num_label = list()
     
-    for i in range(1, (n_bins-1)):
-        num_label.append(str(i))
+    # Scalar
+    if isinstance(n_bins, int):
+        for i in range(1, (n_bins-1)):
+            num_label.append(str(i))
 
-    common.info()
+    # List
+    elif isinstance(n_bins, list):
+        for i in range(1, (len(n_bins))):
+            num_label.append(str(i))
+        
 
     common = common.sort_values(by = 'prediction')
     
-    # Apply bin
-    common['bin'] = pd.qcut(common['prediction'], n_bins)
+    #-------------------------------------
+    # Check bins type input, given scalar
+    # or list we apply qcut or cut
+    #-------------------------------------
+    
+    # If scalar --> equally sized bins given integer
+    if isinstance(n_bins, int):
+        common['bin'] = pd.qcut(common['prediction'], n_bins)
 
+    elif isinstance(n_bins, list):
+        common['bin']=pd.cut(common['prediction'], n_bins, include_lowest=True)
+
+
+    # Copy it and proceed
     common2 = common.copy()
 
     
@@ -491,6 +513,7 @@ def f_lift_table(target
     # fix metadata
     bads.rename('badrate_dist'
                ,inplace = True)
+    
     bad_cumsum.rename('badrate_cumsum'
                      ,inplace = True)
 
