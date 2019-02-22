@@ -68,10 +68,7 @@ f_welcome(True
 
 # Visualize
 from sklearn import preprocessing
-from sklearn import linear_model
-from sklearn.tree import DecisionTreeClassifier
-from sklearn.svm import SVC
-from sklearn.ensemble import GradientBoostingClassifier, RandomForestClassifier, AdaBoostClassifier
+
 from sklearn.ensemble.partial_dependence import plot_partial_dependence
 
 from sklearn.preprocessing import PolynomialFeatures, StandardScaler
@@ -353,12 +350,6 @@ def f_ztest_2prop_vector_v2(exec_f
 
 
 
-
-
-#----------------------------------
-# SPEAR functions
-#
-#----------------------------------    
 def f_roc_curve(target, prediction):
 
     """
@@ -619,10 +610,6 @@ def f_conf_mtrx(exec_f
     """   
         Confusion matrix for reviewing false positive/true postive vs. false negative/true negative in a binary classification setting.
         
-        Required modules:
-        
-        import numpy as np
-        from sklearn.metrics import confusion_matrix
         
         Parameters:
         
@@ -632,8 +619,11 @@ def f_conf_mtrx(exec_f
         predicted_target:          Predicted target class labels
     
     """
-    
     if exec_f:
+        
+        import numpy as np
+        from sklearn.metrics import confusion_matrix
+        
         
         print ("Executing function...")
         print ("\n")
@@ -911,167 +901,6 @@ def f_partial_plot(exec_f
         print ("No exeuction of function, ending...")
         
     
-def f_tf_itf(exec_f
-            ,text_in        # As pd.Series, or array/list. 
-            ,save_voca      # Save unique terms in dictionary, yes/no
-            ,frame_out      # Output in the form of data frame, else as array
-            ,np_print_prec  # Number of decimals to print, numpy setting
-            ):   
-    
-    
-    """
-    Function for creating a tf-idf matrix for input into classification/segmentation and NLP analysis
-    
-    Parameters:
-    
-    
-    text_in:                    pd.Series/Array/List. Containing text to be cleaned
-    save_voca:                    Boolean (True/False). Save uniuqe terms in vocabulary
-    frame_out:                    Boolean (True/False). Save output in form of DataFrame, else as array. DataFrame can be joined back to original d.f. on index
-    np_print_prec:                np setting, how many decimals to print output with 
-    
-    """
-    
-    # Run function
-    if exec_f:
-        
-        print ("Initializing tf-idf execution, first check for only strings...")
-        
-        #--------------------------------------------------------------------------------
-        # Check input data types, if list or nd.array, scan element and check 
-        # if we have only string. If pd.Series, convert to array and check elements.
-        #--------------------------------------------------------------------------------
-        
-        #----------------------------------------------------
-        # Handle pd.Series, convert and scan for not string
-        #----------------------------------------------------
-        if isinstance(text_in, pd.Series):
-
-            # Conver to np.array
-            text_array = np.array(text_in)
-                
-            print ("Data being checked is of type: %s, converting to np.array..." % type(text_in))
-
-            # Check document/row of text_array, string or not
-            if all(isinstance(element, str) for element in [i for i in text_array]):
-                    
-                print ("All elements are strings, proceed with tf-idf...")
-                    
-            # Not string, handling...
-            else:
-                
-                print ("An element is not string, index number of document/row is:")
-                    
-                # Check elements...
-                for idx, val in enumerate(text_in):
-            
-                    # Break if not string, push out index number of document/row to be checked
-                    if not isinstance(val,str):
-                        
-                        print ("Index document/row to check is %s, ending..." % idx)
-                        break              
-
-        #---------------------------------------------------------
-        # Handle rest of data types, only scan for not string
-        #--------------------------------------------------------                       
-        else:
-                
-            print ("Data being checked is of type: %s" % type(text_in))
-                
-            text_array = text_in
-                
-            # Check document/row of text_array, string or not
-            if all(isinstance(element, str) for element in [i for i in text_array]):
-                    
-                print ("All elements are strings, proceed with tf-idf...")
-                    
-            # Not string, handling...
-            else:
-                
-                print ("An element is not string, finding document/row...")
-                    
-                # Check elements...
-                for idx, val in enumerate(text_in):
-            
-                    # Break if not string, push out index number of document/row to be checked
-                    if not isinstance(val,str):
-                        
-                        print ("Index document/row to check is %s, ending..." % idx)
-                        exit()
-
-        print ("Finished scan of text array, all is good!")
-        
-
-        #---------------------------------------------------------
-        # Calculate raw frequencies, i.f. Terms frequencies (tf)
-        #--------------------------------------------------------                       
-        
-        # Initilaize class countvectorizer to object
-        count = CountVectorizer()
-
-        # Call on transform method, create raw term frequencies as coordinates in a tuple (document by unique term) and freq of term
-        bag = count.fit_transform(text_array)
-        
-        # options
-        np.set_printoptions(precision = np_print_prec)
-        
-        print ("Printing out first document row - tuple with coordinates for term frequencies and array form with raw frequnecies per document :")
-        print (bag[0])
-        print ("\n")
-        print (bag[0].toarray())
-        print ("\n")
-    
-        # Saving unique vocabularies in a dictionary:
-        if save_voca:
-            print ("Saving unique terms in document collection, a total of %s terms:" % len(count.vocabulary_.keys()))
-            print ("\n")
-            
-            dict_voca = count.vocabulary_
-
-        #---------------------------------------------------------
-        # Calculate tf - idf from raw frequencies
-        #--------------------------------------------------------                    
-            
-        # Initialize class
-        tfidf = TfidfTransformer()
-
-        # Apply transformation on current data
-        text_tfidf = tfidf.fit_transform(count.fit_transform(text_in)).toarray()
-
-        # Data heavy if one loads up volume
-        print (text_tfidf[0])
-                                  
-            
-        #---------------------------------------------------------
-        # Return output
-        #--------------------------------------------------------                    
-                                  
-        # Data frame output
-        if frame_out:
-                                  
-            # Sparse matric into PD dataframe, with term names as feature labels
-            frame_out = pd.DataFrame(text_tfidf, columns = [i for i in count.vocabulary_.keys()])
-                           
-            # Together with dictionary vocabulary (unique terms in document collection)
-            if save_voca:
-                return (frame_out, dict_voca)
-            
-            # Only frame is returned
-            else:
-                return frame_out
-                    
-        # Frame not selected, as above but returning an array
-        if not frame_out:
-            
-            # As above, for array
-            if save_voca:
-                return (text_tfidf, dict_voca)
-                                  
-            else:
-                return text_tfidf                
-        
-    else:
-        print ("No exeuction of function, ending...")
 
 
 def f_desc_stat(exec_f, dist):
@@ -1120,10 +949,7 @@ def f_desc_stat(exec_f, dist):
         
         
         
-#----------------------------------
-# SPEAR Classes
-#
-#----------------------------------    
+
 class c_swoe_iv(object):
     
     """
@@ -1234,19 +1060,6 @@ class c_swoe_iv(object):
 
         # Spit it out! 
         return self.woe_holder 
-
-
-
-
-
-
-
-    
-#----------------------------------
-# SPEAR "ready-to-go" M.L algos
-#
-#----------------------------------    
-
 
 
 
