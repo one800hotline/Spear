@@ -102,29 +102,38 @@ import pandas as pd
 
 
 
+
+# 190222
 def f_test_mean(exec_f
                 ,indata
-                ,test_x
-                ,test_y
-                ,print_res
+                ,list_test_x
+                ,list_test_y
+                ,bool_print_result
                 ):
 
     """
-    Function for using linnear model to test population mean:
+    Function for using linear model to test sample mean on "A/B" test population.
     
-    indata           indata holding variable to test, and indicator separating the groups
-    test_x           As string: indicator (dummy) flag which separates the two groups
-    test_y           As string/list of strings: The outcome variable whoes mean we want to test between the two groups in 'test_y'
-    
+    indata                   Data holding variables to test, and target separating the groups
+    list_test_x              List of string(s): indicator (dummy) flag which separates the two groups
+    list_test_y              List of string(s): The outcome variable whoes mean we want to test between the two groups in 'list_test_y'
+    bool_print_result        Boolean(True/False): Print result or not
     """
     
     if exec_f:
         
-        # One test is done: x vs. y on mean
-        if isinstance(test_y,str):
+        # Module needed
+        import statsmodels.api as sm
         
-            X = sm.add_constant(indata[test_x])
-            y = indata[test_y]
+        # copy up
+        df_temp=indata.copy()
+        
+        # One test is done: x vs. y on mean
+        if isinstance(list_test_y,list) and len(list_test_y)==1:
+        
+            X = df_temp[list_test_x]
+
+            y = df_temp[list_test_y]
 
             model = sm.OLS(y, X)
             results = model.fit()
@@ -132,64 +141,65 @@ def f_test_mean(exec_f
             print(results.summary())
 
         # a List is provided for outcomes to test, i.e. multipple y, a loop is performed over each of them. Also for multipple x
-        elif isinstance(test_y, list):
+        elif isinstance(list_test_y, list) and len(list_test_y) > 1:
             
-            hold_all = list()
+            list_hold_all = list()
             
-            hold_para_n = list()
-            hold_para_v = list()
-            hold_para_y = list()
-            hold_t_val = list()
-            hold_p_val = list()
+            list_list_hold_para_n = list()
+            list_list_hold_para_v = list()
+            list_list_hold_para_y = list()
+            list_hold_t_val = list()
+            list_hold_p_val = list()
             
-            for idx, var_y in enumerate(test_y):
+            for idx, var_y in enumerate(list_test_y):
                 
                 print (idx, var_y)
                 
-                X = sm.add_constant(indata[test_x])
-                y = indata[var_y]
+                X = df_temp[list_test_x]
+                y = df_temp[var_y]
                 
                 model = sm.OLS(y, X)
                 
                 result = model.fit()
                 
-                hold_para_n.append(result.params.index[0])
-                hold_para_n.append(result.params.index[1])
+                list_list_hold_para_n.append(result.params.index[0])
+                list_list_hold_para_n.append(result.params.index[1])
                 
-                hold_para_y.append(test_y[idx])
-                hold_para_y.append(test_y[idx])
+                list_list_hold_para_y.append(list_test_y[idx])
+                list_list_hold_para_y.append(list_test_y[idx])
                 
-                hold_para_v.append(result.params[0])
-                hold_para_v.append(result.params[1])
+                list_list_hold_para_v.append(result.params[0])
+                list_list_hold_para_v.append(result.params[1])
                 
-                hold_t_val.append(result.tvalues[0])
-                hold_t_val.append(result.tvalues[1])
+                list_hold_t_val.append(result.tvalues[0])
+                list_hold_t_val.append(result.tvalues[1])
                 
-                hold_p_val.append(result.pvalues[0])
-                hold_p_val.append(result.pvalues[1])
+                list_hold_p_val.append(result.pvalues[0])
+                list_hold_p_val.append(result.pvalues[1])
                 
-                if print_res:
+                if bool_print_result:
                 
                     print("-------------------------------------------------------------------------------------")
                     print ("Test of outcome n %s, y: %s vs. x: %s" % ((idx + 1)
                                                                       ,var_y
-                                                                      ,test_x)
+                                                                      ,list_test_x)
                           )
                     print("-------------------------------------------------------------------------------------")
                     print (result.summary())
                     print ("\n")
     
     
-            out = pd.DataFrame({'para' : hold_para_n
-                                ,'para_y' : hold_para_y
-                                ,'para_v' : hold_para_v
-                                ,'para_t' : hold_t_val
-                                ,'para_p' : hold_p_val})
+            out = pd.DataFrame({'para' : list_list_hold_para_n
+                                ,'para_y' : list_list_hold_para_y
+                                ,'para_v' : list_list_hold_para_v
+                                ,'para_t' : list_hold_t_val
+                                ,'para_p' : list_hold_p_val})
             
             return (out)
         
     else:
-        print ("No exectuion of function, ending")
+        print ("No exectuion of function, ending.....")
+
 
 
 
