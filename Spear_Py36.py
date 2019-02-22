@@ -90,7 +90,6 @@ from sklearn.feature_extraction.text import TfidfTransformer
 
 import scipy.stats
 from pylab import *
-import statsmodels.api as sm
 
 # Utilz    
 import numpy as np
@@ -204,36 +203,70 @@ def f_test_mean(exec_f
 
 
 
-def f_ztest_1prop(successes, trials, popmean=0.5, one_sided=False):
+def f_test_z_1prop(success_sample, n_sample, pop_mean=0.5, one_sided=False):
 
-    se = popmean*(1-popmean)/trials
-    p = successes/trials
-    se = sqrt(se)
-    z = (p-popmean)/se
-    p = 1-stats.norm.cdf(abs(z))
-    p *= 2-one_sided # if not one_sided: p *= 2
-
-    print(' z-stat = {z} \n p-value = {p}'.format(z=z,p=p))
+    """
+    This functions performs a one-sample (proportion) z-test vs. a stated population hypothesis.
     
-    #return z, p
+    In-parameters:
+    
+    sucecess_sample           Scalar, integer: Nr of 'positive' outcomes (or nr of 'bads') of the given test/treatment
+    n_sample                  Scalar, integer: Nr of subjects for sample, i.e. 'n'
+    pop_mean                  Population proportion being tested
+    one_sided                 Boolean (True/False): If False, one sided hypothesis, else two-sided
+    """
+    
+    
+    import numpy as np
+    import scipy.stats
+    
+    
+    se = pop_mean*(1-pop_mean)/n_sample
+    p_1 = success_sample/n_sample
+    se = np.sqrt(se)
+    z = (p_1-pop_mean)/se
+    p_val = 1-scipy.stats.norm.cdf(abs(z))
+    p_val *= 2-one_sided # if not one_sided: p *= 2
+
+    print(' z-stat = {z} \n p-value = {p}'.format(z=z,p=p_val))
 
 
 
-def f_ztest_2prop(x1, n1, x2, n2, one_sided=False):
+def f_test_z_2prop(x1, n1, x2, n2, one_sided=False):
+    
+    """
+    This functions performs a two-sample (proportion) z-test, in a 'A/B''test type of set-up, on the difference between the proportions of sample 1 and 2.
+    
+    In-parameters:
+    
+    x1                        Scalar, integer: Nr of 'positive' outcomes (or nr of 'bads') of the given test/treatment in sample 1
+    n1                        Scalar, integer: Nr of subjects, i.e. 'n', in sample 1
+    x2                        Scalar, integer: Nr of 'positive' outcomes (or nr of 'bads') of the given test/treatment in sample 2
+    n2                        Scalar, integer: Nr of subjects, i.e. 'n', in sample 2
+    one_sided                 Boolean (True/False): If False, one sided hypothesis, else two-sided
+    """
+    
+    
+    import numpy as np
+    import scipy.stats
+    
+    
     p1 = x1/n1
     p2 = x2/n2    
     
     p = (x1+x2)/(n1+n2)
     se = p*(1-p)*(1/n1+1/n2)
-    se = sqrt(se)
+    se = np.sqrt(se)
     
     z = (p1-p2)/se
-    p = 1-stats.norm.cdf(abs(z))
-    p *= 2-one_sided # if not one_sided: p *= 2
+    p_val = 1-scipy.stats.norm.cdf(abs(z))
+    p_val *= 2-one_sided # if not one_sided: p *= 2
     
-    print(' z-stat = {z} \n p-value = {p}'.format(z=z,p=p))
+    print(' z-stat = {z} \n p-value = {p}'.format(z=z,p=p_val))
         
     #return z, p
+
+
 
 
 
