@@ -245,7 +245,7 @@ def f_roc_curve(target, prediction):
     """
     import numpy as np
     import pandas as pd
-    from sklearn.metrics import roc_auc
+    from sklearn.metrics import roc_curve, auc
     import matplotlib.pyplot as plt
 
     # Pre-processsing of input types to be able to handle separate objects coming in, i e  Pandas Series or numpy ndarray;
