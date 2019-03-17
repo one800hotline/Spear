@@ -367,7 +367,7 @@ def f_lift_table(target
     target=target.reset_index(drop=True)
     
     # Combine to make calculations
-    common=pd.concat([target, prediction], axis=1, ignore_index=True)
+    common=pd.concat([target, prediction], axis=1, ignore_index=True, sort=False)
     
     #.rename to make code match
     common=pd.DataFrame(common.rename(columns={common.columns[0] : 'target'
@@ -477,7 +477,7 @@ def f_lift_table(target
                              ,pop
                              ,bad_cumsum
                              ,pop_cumsum]
-                            ,axis=1).sort_index(ascending=False)
+                            ,axis=1, sort=False).sort_index(ascending=False)
     
     #.rename
     list_col_to=['decile', 'n_count', 'y_count', 'y_cum_sum', 'n_cum_sum', 'y_actual_%', 'min_pred', 'max_pred', 'mean_pred', 'y_dist', 'n_dist', 'y_dist_cumsum', 'n_dist_cumsum']
