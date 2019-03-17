@@ -9,27 +9,32 @@ import datetime as dt
 import os as os
 
 
-def f_welcome(exec_f,platform):
+
+def f_welcome(exec_f
+              ,platform):
     
     if exec_f:
-    
+        import os as os
+        import datetime as dt
+        import getpass
+
         print ("------------------------------------------")
         print ("Loading %s utility platform!" % platform)
         print ("------------------------------------------")
         
         # Set some parameters
-        date=dt.datetime.today().strftime("%y-%m-%d")
-        time=dt.datetime.today().strftime("%H:%M:%S")
-        time_h=dt.datetime.today().hour
+        date = dt.datetime.today().strftime("%y-%m-%d")
+        time = dt.datetime.today().strftime("%H:%M:%S")
+        time_h = dt.datetime.today().hour
         
         # Are we fetching user (Linux) or username (Windows)?
         try:
-            user=os.environ['USERNAME']
+            user = getpass.getuser()
         except:
             pass
 
         try:
-            user=os.environ['USER']
+            user = getpass.getuser()
         except:
             pass
         
@@ -48,10 +53,10 @@ def f_welcome(exec_f,platform):
             
         else:
             
-            print ("Its late, go home    ")
+            print ("Its late, go home... ")
         
     else:
-        print ("No execution, ending   ")
+        print ("No execution, ending...")
         
         
 f_welcome(True
