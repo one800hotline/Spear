@@ -593,7 +593,8 @@ def f_conf_mtrx(exec_f
     else:
         print ("No exeuction of function, ending   ")
 
-import numpy as np
+
+
 def f_plt_learning_curve(algorithm_obj
                         ,title
                         ,model_x_train
@@ -601,7 +602,7 @@ def f_plt_learning_curve(algorithm_obj
                         ,ylim=None
                         ,cv=None
                         ,n_jobs=1
-                        ,train_sizes=np.linspace( 1, 1.0,0.5)):
+                        ,train_sizes=[0.20, 0.40, 0.60, 0.80, 1.0]):
     
     """
     ----------------------------------------------------------------------------------------------------------------------
