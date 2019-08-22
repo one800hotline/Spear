@@ -551,9 +551,6 @@ def f_prec_recall_curve(exec_f, array_target, array_pred):
         array_tmp_target=array_target
         array_tmp_prediction=array_pred
 
-        # Time
-        print ("Datetime now is: {}".format(f_dt_now()))
-        tick=time.time()
 
         #----------------
         # Univariate
