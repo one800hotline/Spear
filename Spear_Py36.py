@@ -64,9 +64,212 @@ f_welcome(True
     
     
 
+
 #----------------------------------
 # SPEAR functions
 #----------------------------------    
+
+
+def f_model_performance_shap(exec_f
+                             ,array_y
+                             ,array_y_pred
+                             ,tuple_model_obj
+                             ,list_feat_names
+                             ,indata_X_train
+                             ,indata_X_test=None
+                             ,param_force_plt=None):
+
+    """
+    This function looks at a model prediction, and its actuals ground truth label, and takes out the biggest differences (calculated as 'actual'-'prediction'). Given these, and the biggest deviations, an overview of the models SHAP
+    values is given, and a detailed break-down of the prediction given the most influential features. 
+    
+    Parameters:
+    
+    array_y                    Numpy array/Pandas Series (n*1): Actual ground truth labels, i.e. target variable
+    array_y_pred               Numpy array/Pandas Series (n*1): Model object predictions
+    tuple_model_obj            Tuple. String/sklearn estimator object/**kwarg (3*1): Tuple containing model object with estimated parameters from indata_X_trn and a description of model type. Two options are supported, linear and tree-based.
+                                                                                     If 'linear' is passed as parameter 0, parameter 3 needs to be either 'independent or 'correlation'
+    indata_X_trn               Numpy array/Pandas DataFrame (n*m): Design matrix where one row is an observation and one column is an descriptive feature.
+    indata_X_test              Numpy array/Pandas DataFrame or None (n*m): Hold-out test/validation data from model object estimation process. If None, train data is used for SHAP values
+    list_feat_names            List of strings (n*1): List of strings with all feature names going into model object estimation
+    param_force_plt            Scalar. integer/string/None: Parameter for controling force plot. If string ('max'), first element of max model prediction difference is selected from DataFrame. If integer, index row is selected from Train/Test DataFrame. 
+                                                            If None, force plot is skipped.
+    
+    """
+
+    if exec_f:
+
+        #-------------------
+        # Base parameters
+        #-------------------
+        
+        # Time
+        print ("DateTime now is: {}".format(f_dt_now()))
+        tick=time.time()
+
+        # Modules
+        import pandas as pd
+        import numpy as np
+        import shap
+        from IPython.core.display import HTML, display
+        
+        shap.initjs()
+        
+        # Indata
+        X_train=indata_X_train
+        X_test=indata_X_test
+        
+        # Target labels and model predictions
+        y_actual=array_y
+        y_pred=array_y_pred
+
+        # list_feat_names
+        list_feat_names=list_feat_names
+
+        #-----------------------------
+        # Model actual vs prediction
+        #-----------------------------
+
+        # Difference in prediction
+        array_diff_pred_actual=y_actual-y_pred
+
+        # Matrix with index, difference, prediction and actual value
+        array_diff_pred_actual=np.array(list(zip([idx for idx in range(0, len(y_actual))]
+                                            ,array_diff_pred_actual
+                                            ,y_actual
+                                            ,y_pred
+                                                )
+                                            )
+                                       )
+
+        # DataFrame sorted to show top 20 biggest differences
+        df_top_diff_pred_vs_actual=pd.DataFrame(array_diff_pred_actual).sort_values(by=1)
+        df_top_diff_pred_vs_actual.columns=['idx_row', 'diff_pred_vs_actual', 'y_actual', 'y_pred']
+        df_top_diff_pred_vs_actual.reset_index(drop=True, inplace=True)
+
+        # Push top 10 rows with biggest differences
+        display(df_top_diff_pred_vs_actual[:10])
+
+        #-----------------------------------
+        # Model explanation: SHAP values
+        #-----------------------------------
+        def f_shap_values():
+
+            print ("\nGenerating SHAP values, and visualizations given parameters...\n")
+
+            # No test data, only train 
+            if X_test==None:
+
+                # We use X_train to create SHAP values
+                X_shap_input=X_train
+
+            # We have test data!
+            else:
+
+                # We use X_train to create SHAP values
+                X_shap_input=X_test
+
+            # Get shap values, given data specified
+            shap_values = explainer.shap_values(X_shap_input)
+
+            #------------------------------------------------------
+            # Summary plot of model variable importance, 
+            # and force plot for individual prediction break-down
+            #------------------------------------------------------
+            
+            # Summary plot
+            display(shap.summary_plot(shap_values, X_shap_input, feature_names=list_features_X))
+
+            #----------------------------------
+            # Force plot for top diff actual 
+            # vs. prediction IDX row
+            #----------------------------------
+
+            # Pull out a specifix idx value, given data, and check its prediction break-down given input features from model object above and SHAP values
+            def f_force_plot():
+                display(shap.force_plot(explainer.expected_value
+                                ,shap_values[idx,:]
+                                ,X_shap_input[idx,:]
+                                ,feature_names=list_features_X)
+                       )
+
+            # Skip plot
+            if param_force_plt==None:
+                
+                    print ("\nNo execution of prediction row force plot, ending....\n")
+
+            # Force plot for user specified actual vs. prediction IDX row
+            elif type(param_force_plt)==int:
+
+                try:
+                    # index row, and force plot to follow
+                    idx=param_force_plt
+                    f_force_plot()
+
+                # Some error in the provided index
+                except ValueError:
+                    UserWarning('Wrong input for data extraction to force_plot, ending.....')
+                    
+            # We pull the value with biggest difference
+            elif (type(param_force_plt)==str):
+                
+                if param_force_plt=='max': 
+                    idx=int(df_top_diff_pred_vs_actual.loc[0, 'idx_row'])
+                    f_force_plot()
+                    
+                else:
+                    print ("'param_force_plt' string value can only be 'max', re-check parameter.....")
+
+                
+
+        #-----------------------------------------------------
+        # We have a linear model, i.e. something a long 
+        # side logistic regression, linear regression, etc.
+        #-----------------------------------------------------            
+        if tuple_model_obj[0]=='linear':
+
+            try:
+                # Explainer for linear model
+                explainer = shap.LinearExplainer(tuple_model_obj[1], X_train, feature_dependence=tuple_model_obj[2])
+                
+                # Generate SHAP values and visualizations
+                f_shap_values()
+
+            except:
+                print ("Input to LinearExplainer is wrong, check parameters for 'tuple_model_obj'.")
+
+        #-----------------------------------------------------------
+        # We have a tree-based model, i.e. something like boosted or 
+        # bagged trees (RandomForrest, XGBoost, LGBM, Catboost, etc...)
+        #-----------------------------------------------------------
+        elif tuple_model_obj[0]=='tree':
+
+            explainer=shap.TreeExplainer(tuple_model_obj[1])
+
+            # Generate SHAP values and visualizations
+            f_shap_values()
+
+        # Catch the rest....
+        else:
+            raise UserWarning("\nModel input for SHAP calculation not correctly specified, ending....\n")
+
+        
+        return df_top_diff_pred_vs_actual
+
+
+        # Time elapsed
+        print ("Total elapsed time is: {}s".format(round(time.time()-tick, 2)
+                                                  )
+              )
+
+    else:
+        print ("No execution of function, ending....")
+          
+
+
+
+
+
 
 def f_test_mean(exec_f
                 ,indata
@@ -237,80 +440,161 @@ def f_test_z_2prop(x1, n1, x2, n2, one_sided=False):
 
 
 
-def f_roc_curve(target, prediction):
+def f_roc_curve(exec_f,target, prediction):
 
     """
     Receiver operating characterisitc curve (ROC) for a binart mode, to illustrate lift
 
     Parameters:
 
-    targetActual target labels
-    predictionPredicted, by model output, target label
+    array_target                       pd.Series or np.array (dim n): Actual array_target labels
+    array_prediction                   pd.Series or np.array (dim n): Predicted, by model, array_target label. Make sure to use predict-method and not predict proba.
 
     """
-    import numpy as np
-    import pandas as pd
-    from sklearn.metrics import roc_curve, auc
-    import matplotlib.pyplot as plt
+    
+    if exec_f:
+        
+        # Modules
+        import numpy as np
+        import pandas as pd
+        from sklearn.metrics import roc_curve, auc
+        import matplotlib.pyplot as plt
+        
+        # Arrays
+        array_target=target
+        array_prediction=prediction
 
-    # Pre-processsing of input types to be able to handle separate objects coming in, i e  Pandas Series or numpy ndarray;
-    if isinstance(prediction, pd.Series):
-        prediction=prediction.as_matrix()
-        print ("Prediction converted to array")
-        print ("\n")
+        # Pre-processsing of input types to be able to handle separate objects coming in, i e  Pandas Series or numpy ndarray;
+        if isinstance(array_prediction, pd.Series):
+            array_prediction=array_prediction.as_matrix()
+            print ("array_prediction converted to array")
+            print ("\n")
 
-    elif isinstance(prediction, np.ndarray):
-        print ("Model prediction %s is of correct form, proceeding   " % type(prediction))
-        print ("\n")
+        elif isinstance(array_prediction, np.ndarray):
+            print ("Model array_prediction %s is of correct form, proceeding   " % type(array_prediction))
+            print ("\n")
 
-    else: 
-        print("Ending exeuction due to not having a correct variable type")
-        print ("\n")
+        else: 
+            print("Ending exeuction due to not having a correct variable type")
+            print ("\n")
 
-    if isinstance(target, pd.Series):
-        target=target.as_matrix()
-        print ("Target converted to array")
-        print ("\n")
+        if isinstance(array_target, pd.Series):
+            array_target=array_target.as_matrix()
+            print ("array_target converted to array")
+            print ("\n")
 
-    elif isinstance(target, np.ndarray):
-        print ("Model target variable %s is of correct form, proceeding   " % type(target))
-        print ("\n")
+        elif isinstance(array_target, np.ndarray):
+            print ("Model array_target variable %s is of correct form, proceeding   " % type(array_target))
+            print ("\n")
+
+        else:
+            print("Ending exeuction due to not having a correct variable type")
+            print ("\n")
+
+
+        # ROC-curve;
+        fpr=dict()
+        tpr=dict()
+        thresholds=dict()
+        roc_auc=dict()
+
+        # Object holding train array_target and itv;
+        array_target=[array_target]
+        array_prediction=[array_prediction]
+
+        # Itteration over train and ITV to calculate metrics;
+        for i in range(len(array_target)):
+            fpr[i], tpr[i], thresholds[i]=roc_curve(array_target[i], array_prediction[i])
+            roc_auc[i]=auc(fpr[i], tpr[i])
+
+        # Plot train and ITV ROC curve;
+        for j in range(len(array_target)):    
+            plt.figure()
+            plt.figure(figsize=(12, 6))
+            plt.plot(fpr[j], tpr[j], label='ROC curve (area=%0.2f)' % roc_auc[j])
+            plt.plot([0, 1], [0, 1], 'k--')
+            plt.xlim([0.0, 1.0])
+            plt.ylim([0.0, 1.05])
+            plt.xlabel('FPR')
+            plt.ylabel('TPR')
+            plt.title('ROC curve')
+            plt.legend(loc="lower right")
+            plt.show()
+            
+    else:
+        print ("No execution ROC-curve function, ending....")
+
+
+def f_prec_recall_curve(exec_f, array_target, array_pred):
+
+    """
+    This function plots a precision/recall over the whole model population, alongside a univariate average precision/recall measurement.
+    
+    Parameters:
+
+    array_target                       np.array (dim n): Actual target labels
+    array_pred                         np.array (dim n): Predicted, by model, target label. Make sure to use predict-method and not predict proba.
+    
+    
+    """
+
+    if exec_f:
+
+        import numpy as np
+        import pandas as pd
+        from sklearn.metrics import precision_recall_curve
+        from sklearn.metrics import average_precision_score
+        import matplotlib.pyplot as plt
+        from inspect import signature
+
+        # Indata
+        array_tmp_target=array_target
+        array_tmp_prediction=array_pred
+
+        # Time
+        print ("Datetime now is: {}".format(f_dt_now()))
+        tick=time.time()
+
+        #----------------
+        # Univariate
+        #----------------
+        print ("Average precision is: {}".format(average_precision_score(array_tmp_target
+                                                                         ,array_tmp_prediction
+                                                                        )
+                                                )
+              )
+
+        #--------------------------------
+        # Plot Precision/Recall curve
+        #--------------------------------
+
+        fig, ax=plt.subplots(ncols=1
+                            ,nrows=1
+                            ,figsize=(12,6))
+
+        precision, recall, _ = precision_recall_curve(array_tmp_target, array_tmp_prediction)
+
+        # In matplotlib < 1.5, plt.fill_between does not have a 'step' argument
+        step_kwargs = ({'step': 'post'}
+                       if 'step' in signature(plt.fill_between).parameters
+                       else {})
+        plt.step(recall, precision, color='b', alpha=0.2,
+                 where='post')
+        plt.fill_between(recall, precision, alpha=0.2, color='b', **step_kwargs)
+
+        plt.xlabel('Recall')
+        plt.ylabel('Precision')
+        plt.ylim([0.0, 1.05])
+        plt.xlim([0.0, 1.0])
+        plt.title('Binary-class Precision/Recall curve: AP={0:0.2f}'.format(average_precision_score(array_tmp_target
+                                                                                                    ,array_tmp_prediction
+                                                                                                   )
+                                                                           )
+                 )
 
     else:
-        print("Ending exeuction due to not having a correct variable type")
-        print ("\n")
+        print ("No execution of precision/recall curve, ending....")
 
-
-    # ROC-curve;
-    fpr=dict()
-    tpr=dict()
-    thresholds=dict()
-    roc_auc=dict()
-
-    # Object holding train target and itv;
-    target=[target]
-    prediction=[prediction]
-
-    # Itteration over train and ITV to calculate metrics;
-    for i in range(len(target)):
-        fpr[i], tpr[i], thresholds[i]=roc_curve(target[i], prediction[i])
-        roc_auc[i]=auc(fpr[i], tpr[i])
-
-    # Plot train and ITV ROC curve;
-    for j in range(len(target)):    
-        plt.figure()
-        plt.figure(figsize=(12, 6))
-        plt.plot(fpr[j], tpr[j], label='ROC curve (area=%0.2f)' % roc_auc[j])
-        plt.plot([0, 1], [0, 1], 'k--')
-        plt.xlim([0.0, 1.0])
-        plt.ylim([0.0, 1.05])
-        plt.xlabel('FPR')
-        plt.ylabel('TPR')
-        plt.title('ROC curve')
-        plt.legend(loc="lower right")
-        plt.show()
-    
-    
 
 
 
@@ -435,7 +719,7 @@ def f_lift_table(target
     #---------------------------------------------
     # badrate distribution and % cummulative.sum
     #---------------------------------------------
-    bads=actual['target']['sum']/np.sum(actual['target']['fsum'])
+    bads=actual['target']['sum']/np.sum(actual['target']['sum'])
     bad_cumsum=np.cumsum(bads.sort_index(ascending=False))
     
     # fix metadata
@@ -489,7 +773,7 @@ def f_lift_table(target
     
     common_lift.rename(columns=dict(zip([col for col in common_lift.columns], list_col_to)), inplace=True)
     
-    
+    print ("Bad rate in data is: {}%".format(round(np.sum(target)/len(target),3)*100))
     return common_lift
 
 
