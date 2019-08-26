@@ -102,16 +102,22 @@ def f_model_performance_shap(exec_f
         #-------------------
         # Base parameters
         #-------------------
-        
-        # Time
-        print ("DateTime now is: {}".format(f_dt_now()))
-        tick=time.time()
 
         # Modules
         import pandas as pd
         import numpy as np
         import shap
         from IPython.core.display import HTML, display
+        
+        try:
+            # Time
+            print ("DateTime now is: {}".format(f_dt_now()))
+            
+        except:
+            print ("Time flies....")
+        
+        tick=time.time()
+
         
         shap.initjs()
         
@@ -522,7 +528,7 @@ def f_roc_curve(exec_f,target, prediction):
             plt.show()
             
     else:
-        print ("No execution ROC-curve function, ending....")
+        print ("No execution of ROC-curve function, ending....")
 
 
 def f_prec_recall_curve(exec_f, array_target, array_pred):
