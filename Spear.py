@@ -68,8 +68,6 @@ f_welcome(True
 #----------------------------------
 # SPEAR functions
 #----------------------------------    
-
-
 def f_model_performance_shap(exec_f
                              ,array_y
                              ,array_y_pred
@@ -108,7 +106,8 @@ def f_model_performance_shap(exec_f
         import numpy as np
         import shap
         from IPython.core.display import HTML, display
-        
+        import time as time
+
         try:
             # Time
             print ("DateTime now is: {}".format(f_dt_now()))
@@ -184,7 +183,7 @@ def f_model_performance_shap(exec_f
             #------------------------------------------------------
             
             # Summary plot
-            display(shap.summary_plot(shap_values, X_shap_input, feature_names=list_features_X))
+            display(shap.summary_plot(shap_values, X_shap_input, feature_names=list_feat_names))
 
             #----------------------------------
             # Force plot for top diff actual 
@@ -196,7 +195,7 @@ def f_model_performance_shap(exec_f
                 display(shap.force_plot(explainer.expected_value
                                 ,shap_values[idx,:]
                                 ,X_shap_input[idx,:]
-                                ,feature_names=list_features_X)
+                                ,feature_names=list_feat_names)
                        )
 
             # Skip plot
@@ -297,7 +296,9 @@ def f_test_mean(exec_f
         
         # Module needed
         import statsmodels.api as sm
-        
+        import pandas as pd
+        import numpy as np
+
         # copy up
         df_temp=indata.copy()
         
@@ -1023,7 +1024,8 @@ def f_partial_plot(exec_f
         import numpy as np
         import matplotlib.pyplot as plt
         import pandas as pd
-    
+        from sklearn.ensemble.partial_dependence import plot_partial_dependence
+
         print ("Executing function   ")
         print ("\n")
 
@@ -1112,7 +1114,9 @@ def f_desc_stat(exec_f, dist):
     if exec_f:
         import numpy as np
         import seaborn as sns
-        
+        import scipy
+        import matplotlib.pyplot as plt
+
         # Convert dist as numpy ndarray
         dist=np.array(dist)
 
